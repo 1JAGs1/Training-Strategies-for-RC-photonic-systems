@@ -20,6 +20,8 @@ def generate_mask(N: int, rng: Optional[Union[int, np.random.Generator]] = None)
     return gen.random(N)
 
 
+
+
 def standardise(x: np.ndarray, eps: float = 1e-12) -> np.ndarray:
    
     x = np.asarray(x, dtype=float)
@@ -43,7 +45,8 @@ class TDMParams:
     dt: float
     T: float
     tau: float
-    Nd: int
+    Nd_loop: int
+    Nd_delay:int
     tap_stride: int
 
 
@@ -56,17 +59,18 @@ def compute_tdm_params(
     
     T = N * theta
     tau = tau_factor * T
-    Nd = int(round(tau / dt))
+    Nd_loop = int(round(T / dt))
+    Nd_delay = int(round(tau / dt))
     tap_stride = int(round(theta / dt))
 
-    if Nd <= 0:
-        raise ValueError(f"Nd computed as {Nd}. Check tau/dt (tau={tau}, dt={dt}).")
+    if Nd_delay <= 0:
+        raise ValueError(f"Nd computed as {Nd_delay}. Check tau/dt (tau={tau}, dt={dt}).")
     if tap_stride <= 0:
         raise ValueError(
             f"tap_stride computed as {tap_stride}. Check theta/dt (theta={theta}, dt={dt})."
         )
 
-    return TDMParams(N=N, theta=theta, dt=dt, T=T, tau=tau, Nd=Nd, tap_stride=tap_stride)
+    return TDMParams(N=N, theta=theta, dt=dt, T=T, tau=tau, Nd_loop=Nd_loop, Nd_delay=Nd_delay, tap_stride=tap_stride)
 
 
 def build_masked_input(
