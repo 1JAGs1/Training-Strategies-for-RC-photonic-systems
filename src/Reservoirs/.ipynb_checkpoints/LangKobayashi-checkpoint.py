@@ -5,10 +5,11 @@ import numpy as np
 
 
 #Setting up ODEs
+'''
 def expand_virtual_nodes(V, tap_stride, Nd):
 
     L, N = V.shape
-    #Nd = N * tap_stride
+  
 
     Vs = np.zeros(L * Nd)
 
@@ -16,6 +17,18 @@ def expand_virtual_nodes(V, tap_stride, Nd):
         for n in range(N):
             for step in range(n * tap_stride, (n + 1) * tap_stride):
                 Vs[step + l * Nd] = V[l, n]
+
+    return Vs
+'''
+def expand_virtual_nodes(V, tap_stride, Nd):
+    L, N = V.shape
+   # Nd = N * tap_stride
+
+    # Repeat each column tap_stride times along time axis
+    V_expanded = np.repeat(V, tap_stride, axis=1)
+
+    # Flatten into single time series
+    Vs = V_expanded.reshape(L * Nd)
 
     return Vs
 

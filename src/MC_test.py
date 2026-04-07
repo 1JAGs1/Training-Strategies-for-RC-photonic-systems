@@ -1,0 +1,79 @@
+import numpy as np
+from sklearn.linear_model import Ridge
+import matplotlib.pyplot as plt
+
+def linear_memory_curve(R, u, max_delay=50, washout=100, split=0.8, ridge_alpha=1e-6):
+    """
+    R: state matrix, shape (L, N)
+    u: original scalar input sequence before masking, shape (L,)
+    max_delay: test delays d = 1..max_delay, measured in input cycles
+    washout: number of initial rows of R to ignore
+    split: chronological train/test split
+    """
+    R = np.asarray(R, dtype=float)
+    u = np.asarray(u, dtype=float).reshape(-1)
+
+    assert R.shape[0] == len(u), "R rows must match number of input cycles"
+
+    delays = []
+    capacities = []
+    nrmse_list = []
+
+    # start late enough that all tested delays are valid
+    start = washout + max_delay
+    t_idx = np.arange(start, len(u))
+
+    for d in range(1, max_delay + 1):
+        X = R[t_idx, :]          # current reservoir states
+        y = u[t_idx - d]         # delayed target input
+
+        n_samples = len(y)
+        n_train = int(split * n_samples)
+
+        X_train, X_test = X[:n_train], X[n_train:]
+        y_train, y_test = y[:n_train], y[n_train:]
+
+        # Centre using train stats only
+        X_mean = X_train.mean(axis=0, keepdims=True)
+        y_mean = y_train.mean()
+
+        X_train_c = X_train - X_mean
+        X_test_c  = X_test  - X_mean
+        y_train_c = y_train - y_mean
+        y_test_c  = y_test  - y_mean
+
+        model = Ridge(alpha=ridge_alpha, fit_intercept=False)
+        model.fit(X_train_c, y_train_c)
+        y_pred_c = model.predict(X_test_c)
+
+        mse = np.mean((y_test_c - y_pred_c)**2)
+        var = np.var(y_test_c)
+
+        if var <= 0:
+            C_d = 0.0
+            nrmse = np.nan
+        else:
+            C_d = max(0.0, 1.0 - mse / var)   # held-out memory score
+            nrmse = np.sqrt(mse / var)
+
+        delays.append(d)
+        capacities.append(C_d)
+        nrmse_list.append(nrmse)
+
+    delays = np.array(delays)
+    capacities = np.array(capacities)
+    nrmse_list = np.array(nrmse_list)
+
+    MC_est = capacities.sum()
+    return delays, capacities, nrmse_list, MC_est
+
+
+def plot_memory_curve(delays, capacities, MC_est):
+    plt.figure(figsize=(8, 4))
+    plt.plot(delays, capacities, marker='o', linewidth=1)
+    plt.xlabel("Delay d (input cycles)")
+    plt.ylabel("Memory score C_d")
+    plt.title(f"Linear memory curve   MC_est = {MC_est:.2f}")
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
