@@ -9,6 +9,17 @@ import numpy as np
 
 ArrayLike = Union[np.ndarray]
 
+'''
+def generate_mask(N: int, rng: Optional[Union[int, np.random.Generator]] = None) -> np.ndarray:
+ 
+    if isinstance(rng, np.random.Generator):
+        gen = rng
+    else:
+        gen = np.random.default_rng(rng)
+
+    return gen.random(N)
+'''
+#the below is from -1 to 1 as opposed to 0 to 1, we might have to do prior tests to see if bettter resposne 
 
 def generate_mask(N: int, rng: Optional[Union[int, np.random.Generator]] = None) -> np.ndarray:
  
@@ -73,14 +84,7 @@ def compute_tdm_params(
     return TDMParams(N=N, theta=theta, dt=dt, T=T, tau=tau, Nd_loop=Nd_loop, Nd_delay=Nd_delay, tap_stride=tap_stride)
 
 
-def build_masked_input(
-    x: np.ndarray,
-    N: int,
-    rng: Optional[Union[int, np.random.Generator]] = None,
-    *,
-    do_standardise: bool = True,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-   
+def build_masked_input(x: np.ndarray, N: int, rng: Optional[Union[int, np.random.Generator]] = None, *, do_standardise: bool = True,) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
  
     mask = generate_mask(N, rng=rng)
     x_norm = standardise(x) if do_standardise else np.asarray(x, dtype=float)

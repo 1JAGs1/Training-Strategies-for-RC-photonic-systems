@@ -43,6 +43,11 @@ def split_states_targets(R: np.ndarray, y: np.ndarray, split: float = 0.8,) -> S
     idx = int(split * R.shape[0])
     return SplitData(R_train=R[:idx], R_test=R[idx:], y_train=y[:idx], y_test=y[idx:],)
 
+#===
+
+#def perform_washout(R:np.ndarray, y: np.ndarray, n_of_cycles: int): 
+
+    
 
 
 

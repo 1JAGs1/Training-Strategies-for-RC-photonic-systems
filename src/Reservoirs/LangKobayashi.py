@@ -22,12 +22,9 @@ def expand_virtual_nodes(V, tap_stride, Nd):
 '''
 def expand_virtual_nodes(V, tap_stride, Nd):
     L, N = V.shape
-   # Nd = N * tap_stride
 
-    # Repeat each column tap_stride times along time axis
     V_expanded = np.repeat(V, tap_stride, axis=1)
 
-    # Flatten into single time series
     Vs = V_expanded.reshape(L * Nd)
 
     return Vs
@@ -197,7 +194,7 @@ def simulate_lk_mini(Vs, dt, Nd_delay, *, alpha, kappa, phi, p, eta, D_noise, xi
 
 
 #extraction
-
+'''
 def extract_R_from_E(E_hist, L, N, tap_stride, Nd_loop):
     R = np.zeros((L, N), dtype=float)
     for l in range(L):
@@ -206,7 +203,27 @@ def extract_R_from_E(E_hist, L, N, tap_stride, Nd_loop):
             t_idx = base + (n + 1) * tap_stride - 1  # end of slot
             R[l, n] = np.abs(E_hist[t_idx])**2
     return R
+'''
 
+def extract_R_from_E(E_hist, L, N, tap_stride, Nd_loop, washout_cycles):
+    
+    washedL = L - washout_cycles
+    
+    R = np.zeros((washedL, N), dtype=float)
+    for l in range(washedL):
+        base = (l + washout_cycles) * Nd_loop
+        for n in range(N):
+            t_idx = base + (n + 1) * tap_stride - 1  
+
+            if t_idx >= len(E_hist):
+                raise ValueError("E_hist is too short, ensure you've added washout at input")
+            
+            R[l, n] = np.abs(E_hist[t_idx])**2
+    return R
+
+
+
+'''
 
 def intensities_after_theta_times(E_hist, N_of_thetas, tap_stride):
     R_array = np.zeros(N_of_thetas, dtype=float)
@@ -216,13 +233,44 @@ def intensities_after_theta_times(E_hist, N_of_thetas, tap_stride):
         R_array[k] = np.abs(E_hist[t])**2
 
     return R_array
+'''
 
+def intensities_after_theta_times(E_hist, N_of_thetas, tap_stride, Nd_loop, washout_cycles):
+
+    N = Nd_loop // tap_stride
+    washed_N_of_thetas = N_of_thetas - (washout_cycles*N)
+    R_array = np.zeros(washed_N_of_thetas, dtype=float)
+
+    base = washout_cycles * Nd_loop
+    
+    for k in range(washed_N_of_thetas):
+        t = base + (k * tap_stride)
+        R_array[k] = np.abs(E_hist[t])**2
+
+    return R_array
+
+'''
 def charge_at_theta_intervals(n_hist, N_of_thetas, tap_stride):
     
     R_array = np.zeros(N_of_thetas, dtype=float)
     
     for k in range(N_of_thetas):
         t = k * tap_stride
+        R_array[k] = n_hist[t]
+
+    return R_array
+'''    
+
+def charge_at_theta_intervals(n_hist, N_of_thetas, tap_stride, Nd_loop, washout_cycles):
+    
+    N = Nd_loop // tap_stride
+    washed_N_of_thetas = N_of_thetas - (washout_cycles*N)
+    R_array = np.zeros(washed_N_of_thetas, dtype=float)
+
+    base = washout_cycles * Nd_loop
+    
+    for k in range(washed_N_of_thetas):
+        t = base + (k * tap_stride)
         R_array[k] = n_hist[t]
 
     return R_array
