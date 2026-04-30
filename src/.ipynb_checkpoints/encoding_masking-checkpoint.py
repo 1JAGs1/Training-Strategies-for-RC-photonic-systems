@@ -126,7 +126,7 @@ def generate_mask(
         return generate_m_sequence_mask(N, rng)
         
     elif mask_type == "two_sine":
-        return generate_m_sequence_mask(N, rng)
+        return generate_two_sine_mask(N, rng)
 
     else:
         raise ValueError(f"Unknown mask_type: {mask_type}")
