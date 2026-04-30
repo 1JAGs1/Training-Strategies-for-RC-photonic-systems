@@ -57,6 +57,57 @@ def generate_binary_mask(N: int, rng: Optional[Union[int, np.random.Generator]] 
 
     return gen.choice([-1, 1], size=N)
 
+def generate_m_sequence_mask(
+    N: int,
+    rng: Optional[Union[int, np.random.Generator]] = None
+) -> np.ndarray:
+
+    if isinstance(rng, np.random.Generator):
+        gen = rng
+    else:
+        gen = np.random.default_rng(rng)
+
+    k = int(np.ceil(np.log2(N + 1)))
+
+    # Fixed taps  can be changed this later if time allows(better analysis)
+    taps = [0, 1]
+
+    # Initial state (must not be all zeros)
+    state = gen.integers(0, 2, size=k)
+    if not np.any(state):  # avoid zero state
+        state[0] = 1
+
+    seq = []
+
+    for _ in range(2**k - 1):
+        output = state[-1]
+        seq.append(output)
+
+        # XOR feedback
+        feedback = sum(state[t] for t in taps) % 2
+
+        # Shift register
+        state[1:] = state[:-1]
+        state[0] = feedback
+
+    seq = np.array(seq)
+
+    # Convert {0,1} → {-1,1}
+    seq = 2*seq - 1
+
+    return seq[:N]
+
+
+def generate_two_sine_mask(N: int, f1: int = 1, f2: int = 3) -> np.ndarray:
+
+    n = np.arange(N)
+
+    mask = np.sin(2 * np.pi * f1 * n / N) + np.sin(2 * np.pi * f2 * n / N)
+
+    # Normalise to [-1, 1] 
+    mask = mask / np.max(np.abs(mask))
+
+    return mask
 #======================================
 
 def generate_mask(
@@ -70,6 +121,12 @@ def generate_mask(
 
     elif mask_type == "continuous":
         return generate_continuous_mask(N, rng)
+        
+    elif mask_type == "m_sequence":
+        return generate_m_sequence_mask(N, rng)
+        
+    elif mask_type == "two_sine":
+        return generate_m_sequence_mask(N, rng)
 
     else:
         raise ValueError(f"Unknown mask_type: {mask_type}")
