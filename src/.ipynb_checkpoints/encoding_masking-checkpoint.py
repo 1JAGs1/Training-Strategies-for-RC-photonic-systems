@@ -9,30 +9,76 @@ import numpy as np
 
 ArrayLike = Union[np.ndarray]
 
-'''
-def generate_mask(N: int, rng: Optional[Union[int, np.random.Generator]] = None) -> np.ndarray:
+
+#the below is from 0 to 1 as opposed to -1 to 1, we might have to do prior tests to see if bettter resposne 
+
+# def generate_mask(N: int, rng: Optional[Union[int, np.random.Generator]] = None) -> np.ndarray:
+ 
+#     if isinstance(rng, np.random.Generator):
+#         gen = rng
+#     else:
+#         gen = np.random.default_rng(rng)
+
+#     return gen.random(N) 
+
+# def generate_mask(N: int, rng: Optional[Union[int, np.random.Generator]] = None) -> np.ndarray:
+ 
+#     if isinstance(rng, np.random.Generator):
+#         gen = rng
+#     else:
+#         gen = np.random.default_rng(rng)
+
+#     return gen.random(N) 
+
+
+
+
+
+
+
+
+#NEW CODE BUT WILL DEFFO USE RHIS===============================================
+def generate_continuous_mask(N: int, rng: Optional[Union[int, np.random.Generator]] = None) -> np.ndarray:
  
     if isinstance(rng, np.random.Generator):
         gen = rng
     else:
         gen = np.random.default_rng(rng)
 
-    return gen.random(N)
-'''
-#the below is from -1 to 1 as opposed to 0 to 1, we might have to do prior tests to see if bettter resposne 
+    return 2*gen.random(N) -1
 
-def generate_mask(N: int, rng: Optional[Union[int, np.random.Generator]] = None) -> np.ndarray:
- 
+
+def generate_binary_mask(N: int, rng: Optional[Union[int, np.random.Generator]] = None) -> np.ndarray:
+
     if isinstance(rng, np.random.Generator):
         gen = rng
     else:
         gen = np.random.default_rng(rng)
 
-    return gen.random(N)
+    return gen.choice([-1, 1], size=N)
+
+#======================================
+
+def generate_mask(
+    N: int,
+    mask_type: str = "binary",
+    rng: Optional[Union[int, np.random.Generator]] = None
+) -> np.ndarray:
+
+    if mask_type == "binary":
+        return generate_binary_mask(N, rng)
+
+    elif mask_type == "continuous":
+        return generate_continuous_mask(N, rng)
+
+    else:
+        raise ValueError(f"Unknown mask_type: {mask_type}")
+#========================================================================
 
 
 
-
+    
+ 
 def standardise(x: np.ndarray, eps: float = 1e-12) -> np.ndarray:
    
     x = np.asarray(x, dtype=float)
@@ -46,6 +92,8 @@ def apply_mask(x_norm: np.ndarray, mask: np.ndarray) -> np.ndarray:
     x_norm = np.asarray(x_norm, dtype=float).reshape(-1)
     mask = np.asarray(mask, dtype=float).reshape(-1)
     return np.outer(x_norm, mask)
+
+
 
 
 @dataclass(frozen=True)
@@ -84,9 +132,22 @@ def compute_tdm_params(
     return TDMParams(N=N, theta=theta, dt=dt, T=T, tau=tau, Nd_loop=Nd_loop, Nd_delay=Nd_delay, tap_stride=tap_stride)
 
 
-def build_masked_input(x: np.ndarray, N: int, rng: Optional[Union[int, np.random.Generator]] = None, *, do_standardise: bool = True,) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+# def build_masked_input(x: np.ndarray, N: int, rng: Optional[Union[int, np.random.Generator]] = None, *, do_standardise: bool = True,) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
  
-    mask = generate_mask(N, rng=rng)
-    x_norm = standardise(x) if do_standardise else np.asarray(x, dtype=float)
-    V = apply_mask(x_norm, mask)
-    return x_norm, mask, V
+#     mask = generate_mask(N, rng=rng)
+#     x_norm = standardise(x) if do_standardise else np.asarray(x, dtype=float)
+#     V = apply_mask(x_norm, mask)
+#     return x_norm, mask, V
+
+
+#new build masked input:
+
+def build_masked_input(x: np.ndarray, N: int, rng: Optional[Union[int, np.random.Generator]] = None, *, mask_type: str = "binary", do_standardise: bool = True,) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+
+     mask = generate_mask(N, mask_type=mask_type, rng=rng)
+
+     x_norm = standardise(x) if do_standardise else np.asarray(x, dtype=float)
+
+     V = apply_mask(x_norm, mask)
+
+     return x_norm, mask, V
