@@ -20,6 +20,7 @@ def expand_virtual_nodes(V, tap_stride, Nd):
 
     return Vs
 '''
+#faster vectorised version
 def expand_virtual_nodes(V, tap_stride, Nd):
     L, N = V.shape
 
@@ -28,7 +29,8 @@ def expand_virtual_nodes(V, tap_stride, Nd):
     Vs = V_expanded.reshape(L * Nd)
 
     return Vs
-    
+
+
 
 def ODEs(E, n, E_delay, v_slot, alpha, kappa, phi, p, eta, D_noise, xi, Tlk):
   
@@ -47,7 +49,7 @@ def ODEs(E, n, E_delay, v_slot, alpha, kappa, phi, p, eta, D_noise, xi, Tlk):
     return dEdt, dndt
 
 '''
-### NOISE version
+### NOISE version=======================================
 def ODEs(E, n, E_delay, v_slot, alpha, kappa, phi, p, eta, D_noise, xi, Tlk):
   
   
@@ -64,6 +66,20 @@ def ODEs(E, n, E_delay, v_slot, alpha, kappa, phi, p, eta, D_noise, xi, Tlk):
 
     return dEdt, dndt
 '''
+'''
+### NOISE version2=======================================
+def ODEs(E, n, E_delay, v_slot, alpha, kappa, phi, p, eta, Tlk):
+    I = np.abs(E)**2
+
+    dEdt = ((1.0 + 1j*alpha) * n * E) + (kappa * np.exp(1j*phi) * E_delay)
+    dndt = (1 / Tlk) * (p + eta * v_slot - n - ((2*n + 1) * I))
+
+    return dEdt, dndt
+'''
+
+
+
+
 
 def rk4_step(E, n, E_delay, v_slot, dt, alpha, kappa, phi, p, eta, D_noise, xi, Tlk):
     
@@ -92,9 +108,10 @@ def rk4_step(E, n, E_delay, v_slot, dt, alpha, kappa, phi, p, eta, D_noise, xi, 
 
     return E_next, n_next
 
+
 '''
-#Noise Version
-def rk4_step(E, n, E_delay, v_slot, dt, alpha, kappa, phi, p, eta, Tlk, D_noise, rng):
+#Noise Version#=======================================================
+def rk4_step(E, n, E_delay, v_slot, dt, alpha, kappa, phi, p, eta, D_noise, Tlk, rng):
 
     # k1
     k1_E, k1_n = ODEs(E, n, E_delay, v_slot, alpha, kappa, phi, p, eta, Tlk)
@@ -123,11 +140,13 @@ def rk4_step(E, n, E_delay, v_slot, dt, alpha, kappa, phi, p, eta, Tlk, D_noise,
     E_next = E_next + D_noise * np.sqrt(dt) * noise
 
     return E_next, n_next
+
 '''
 
-
 #running ODEs
+
 def simulate_lk(Vs, dt, Nd_delay, *, alpha, kappa, phi, p, eta, D_noise, xi, Tlk, E0=1e-3+0j, n0=0.0):
+    
     Vs = np.asarray(Vs, dtype=float)
     T_steps = Vs.size
 
@@ -149,10 +168,51 @@ def simulate_lk(Vs, dt, Nd_delay, *, alpha, kappa, phi, p, eta, D_noise, xi, Tlk
         n_hist[t] = n
 
         delay_buf[di] = E
-        di = (di + 1) % Nd_delay
+        di = (di + 1) % Nd_delay #**
 
     return E_hist, n_hist
 
+
+
+'''
+
+#simulate lk noise: ===================
+def simulate_lk(Vs, dt, Nd_delay, *, alpha, kappa, phi, p, eta, D_noise, Tlk, E0=1e-3+0j, n0=0.0):
+    
+    rng = np.random.default_rng(30)
+    
+    Vs = np.asarray(Vs, dtype=float)
+    T_steps = Vs.size
+
+    E_hist = np.zeros(T_steps, dtype=np.complex128)
+    n_hist = np.zeros(T_steps, dtype=float)
+
+    # delay buffer holds E(t - tau)
+    delay_buf = np.full(Nd_delay, E0, dtype=np.complex128)
+    di = 0 #Index pointer for delay buffer
+
+    E, n = E0, n0
+    for t in range(T_steps):
+        v_slot = float(Vs[t])
+        E_delay = delay_buf[di]
+
+        E, n = rk4_step(E, n, E_delay, v_slot, dt, alpha, kappa, phi, p, eta, D_noise, Tlk, rng)
+
+        E_hist[t] = E
+        n_hist[t] = n
+
+        delay_buf[di] = E
+        di = (di + 1) % Nd_delay #**
+
+    return E_hist, n_hist
+
+
+'''
+
+
+
+
+    
 
 def simulate_lk_mini(Vs, dt, Nd_delay, *, alpha, kappa, phi, p, eta, D_noise, xi, Tlk, N_of_thetas, tap_stride, E0=1e-3+0j, n0=0.0):
     Vs = np.asarray(Vs, dtype=float)
@@ -187,7 +247,39 @@ def simulate_lk_mini(Vs, dt, Nd_delay, *, alpha, kappa, phi, p, eta, D_noise, xi
     return E_hist, n_hist
 
 
+'''
+#Noise version
+def simulate_lk_mini(Vs, dt, Nd_delay, *, alpha, kappa, phi, p, eta, D_noise, Tlk, N_of_thetas, tap_stride, E0=1e-3+0j, n0=0.0):
+    Vs = np.asarray(Vs, dtype=float)
+    T_steps = N_of_thetas * tap_stride
+    rng = np.random.default_rng(30)
 
+    if len(Vs) < T_steps:
+        raise ValueError("Vs is shorter than N_of_thetas * tap_stride")
+
+    E_hist = np.zeros(T_steps, dtype=np.complex128)
+    n_hist = np.zeros(T_steps, dtype=float)
+
+    delay_buf = np.full(Nd_delay, E0, dtype=np.complex128)
+    di = 0
+
+    E, n = E0, n0
+
+    for t in range(T_steps):
+        v_slot = float(Vs[t])
+        E_delay = delay_buf[di]
+
+        E, n = rk4_step(E, n, E_delay, v_slot, dt, alpha, kappa, phi, p, eta, D_noise, Tlk, rng)
+
+        E_hist[t] = E
+        n_hist[t] = n
+
+        delay_buf[di] = E
+        di = (di + 1) % Nd_delay
+
+    return E_hist, n_hist
+
+'''
 
 
 
