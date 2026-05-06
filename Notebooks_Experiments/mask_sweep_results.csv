@@ -1,2 +1,2 @@
 mask_type,eta,mask_seed,ridge_alpha,nrmse
-two_sine,0.01,42,1e-06,0.614447824177071
+m_sequence,0.01,42,1e-06,0.3201121300583416
