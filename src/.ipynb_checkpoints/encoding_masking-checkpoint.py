@@ -157,6 +157,13 @@ def generate_two_sine_mask(N: int, f1: int = 7, f2: int = 9) -> np.ndarray:
     mask = mask / np.max(np.abs(mask))
 
     return mask
+
+
+
+def generate_constant_mask(N: int) -> np.ndarray:
+
+    
+    return np.ones(N)
 #======================================
 
 def generate_mask(
@@ -176,6 +183,9 @@ def generate_mask(
         
     elif mask_type == "two_sine":
         return generate_two_sine_mask(N)
+    
+    elif mask_type == "constant":
+        return generate_constant_mask(N)
 
     else:
         raise ValueError(f"Unknown mask_type: {mask_type}")
