@@ -4,17 +4,11 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 
 def linear_memory_curve(R, u, max_delay=50, washout=100, split=0.8, ridge_alpha=1e-6):
-    """
-    R: state matrix, shape (L, N)
-    u: original scalar input sequence before masking, shape (L,)
-    max_delay: test delays d = 1..max_delay, measured in input cycles
-    washout: number of initial rows of R to ignore
-    split: chronological train/test split
-    """
+
     R = np.asarray(R, dtype=float)
     u = np.asarray(u, dtype=float).reshape(-1)
 
-    assert R.shape[0] == len(u), "R rows must match number of input cycles"
+    assert R.shape[0] == len(u),
 
     delays = []
     capacities = []
@@ -87,23 +81,7 @@ def plot_memory_curve(
     save_path=None,
     show=True
 ):
-    """
-    Plot memory capacity curve in a report-ready format.
-
-    Parameters
-    ----------
-    delays : array-like
-        Delay values.
-    capacities : array-like
-        Memory score C_d for each delay.
-    MC_est : float
-        Estimated total memory capacity.
-    save_path : str or None
-        If provided, saves the figure to this path.
-        Example: "memory_curve_N50.png"
-    show : bool
-        Whether to display the plot.
-    """
+  
 
     fig, ax = plt.subplots(figsize=(7.2, 4.2), dpi=300)
 

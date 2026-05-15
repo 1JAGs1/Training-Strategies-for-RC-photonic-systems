@@ -143,6 +143,7 @@ def rk4_step(E, n, E_delay, v_slot, dt, alpha, kappa, phi, p, eta, D_noise, Tlk,
 
 '''
 
+
 #running ODEs
 
 def simulate_lk(Vs, dt, Nd_delay, *, alpha, kappa, phi, p, eta, D_noise, xi, Tlk, E0=1e-3+0j, n0=0.0):

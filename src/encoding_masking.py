@@ -57,45 +57,7 @@ def generate_binary_mask(N: int, rng: Optional[Union[int, np.random.Generator]] 
 
     return gen.choice([-1, 1], size=N)
 
-# def generate_m_sequence_mask(N: int, rng: Optional[Union[int, np.random.Generator]] = None) -> np.ndarray:
-
-#     if isinstance(rng, np.random.Generator):
-#         gen = rng
-#     else:
-#         gen = np.random.default_rng(rng)
-
-#     k = int(np.ceil(np.log2(N + 1)))
-
-#     # Fixed taps  can be changed this later if time allows(better analysis)
-#     taps = [0, 1]
-
-#     # Initial state (must not be all zeros)
-#     state = gen.integers(0, 2, size=k)
-#     if not np.any(state):  # avoid zero state
-#         state[0] = 1
-
-#     seq = []
-
-#     for _ in range(2**k - 1):
-#         output = state[-1]
-#         seq.append(output)
-
-#         # XOR feedback
-#         feedback = sum(state[t] for t in taps) % 2
-
-#         # Shift register
-#         state[1:] = state[:-1]
-#         state[0] = feedback
-
-#     seq = np.array(seq)
-
-#     # Convert {0,1} → {-1,1}
-#     seq = 2*seq - 1
-
-#     return seq[:N]
-
-
-def generate_m_sequence_mask(N: int, rng=None) -> np.ndarray:
+def generate_m_sequence_mask(N: int, rng: Optional[Union[int, np.random.Generator]] = None) -> np.ndarray:
 
     if isinstance(rng, np.random.Generator):
         gen = rng
@@ -104,24 +66,12 @@ def generate_m_sequence_mask(N: int, rng=None) -> np.ndarray:
 
     k = int(np.ceil(np.log2(N + 1)))
 
- 
-    #TAPS WERE [0,1] before...
-    primitive_taps = {
-        2: [0, 1],
-        3: [0, 2],
-        4: [0, 3],
-        5: [0, 2],
-        6: [0, 5],
-    }
+    
+    taps = [0, 1]
 
-    if k not in primitive_taps:
-        raise ValueError(f"No primitive taps stored for k={k}. Add taps for this k.")
-
-    taps = primitive_taps[k]
-
+    
     state = gen.integers(0, 2, size=k)
-
-    if not np.any(state):
+    if not np.any(state):  
         state[0] = 1
 
     seq = []
@@ -130,16 +80,66 @@ def generate_m_sequence_mask(N: int, rng=None) -> np.ndarray:
         output = state[-1]
         seq.append(output)
 
+        
         feedback = sum(state[t] for t in taps) % 2
+
 
         state[1:] = state[:-1]
         state[0] = feedback
 
     seq = np.array(seq)
 
+
     seq = 2*seq - 1
 
     return seq[:N]
+
+
+# def generate_m_sequence_mask(N: int, rng=None) -> np.ndarray:
+
+#     if isinstance(rng, np.random.Generator):
+#         gen = rng
+#     else:
+#         gen = np.random.default_rng(rng)
+
+#     k = int(np.ceil(np.log2(N + 1)))
+
+ 
+#     #TAPS WERE [0,1] before...
+#     primitive_taps = {
+#         2: [0, 1],
+#         3: [0, 2],
+#         4: [0, 3],
+#         5: [0, 2],
+#         6: [0, 5],
+#     }
+
+#     if k not in primitive_taps:
+#         raise ValueError(f"No primitive taps stored for k={k}. Add taps for this k.")
+
+#     taps = primitive_taps[k]
+
+#     state = gen.integers(0, 2, size=k)
+
+#     if not np.any(state):
+#         state[0] = 1
+
+#     seq = []
+
+#     for _ in range(2**k - 1):
+#         output = state[-1]
+#         seq.append(output)
+
+#         feedback = sum(state[t] for t in taps) % 2
+
+#         state[1:] = state[:-1]
+#         state[0] = feedback
+
+#     seq = np.array(seq)
+
+#     seq = 2*seq - 1
+
+#     return seq[:N]
 
 
 
